@@ -21,6 +21,7 @@ import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
 import Adafruit_BBIO.ADC as ADC
 
+
 # Constants
 LEFT = 0
 RIGHT = 1
@@ -68,10 +69,12 @@ class QuickBot():
 
     # ADC Pins
     irPin = ('P9_38', 'P9_40', 'P9_36', 'P9_35', 'P9_33')
-    encoderPin = ('P9_39', 'P9_37')
+    
+    #ENCODER Pins
+    encoderPin =('P9_11', 'P9_13')# ('P9_39', 'P9_37')
 
     # Encoder counting parameter and variables
-    ticksPerTurn = 16  # Number of ticks on encoder disc
+    ticksPerTurn = 16#16  # Number of ticks on encoder disc
     encWinSize = 2**5  # Should be power of 2
     minPWMThreshold = [45, 45]  # Threshold on the minimum value to turn wheel
     encTPrev = [0.0, 0.0]
@@ -118,9 +121,9 @@ class QuickBot():
     cmdBuffer = ''
 
     # UDP
-    baseIP = '192.168.7.1'
-    robotIP = '192.168.7.2'
-    port = 5005
+    baseIP = '192.168.1.101'
+    robotIP = '192.168.1.100'
+    port = 5006
     robotSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     robotSocket.setblocking(False)
 
@@ -128,11 +131,29 @@ class QuickBot():
     # Constructor
     def __init__(self, baseIP, robotIP):
 
+	def derecha(channel):
+           self.encPos[RIGHT]+=1
+           print 'cuenta derecha es {0}'.format(self.encPos[RIGHT])
+
+	def izquierda(channel):
+           self.encPos[LEFT]+=1
+           print 'cuenta izquierda es {0}'.format(self.encPos[LEFT])
+
+
         # Initialize GPIO pins
         GPIO.setup(self.dir1Pin[LEFT], GPIO.OUT)
         GPIO.setup(self.dir2Pin[LEFT], GPIO.OUT)
         GPIO.setup(self.dir1Pin[RIGHT], GPIO.OUT)
         GPIO.setup(self.dir2Pin[RIGHT], GPIO.OUT)
+
+	GPIO.setup(self.encoderPin[LEFT], GPIO.IN)
+	GPIO.setup(self.encoderPin[RIGHT], GPIO.IN)
+	
+	GPIO.add_event_detect("P9_11", GPIO.BOTH)
+	GPIO.add_event_detect("P9_13", GPIO.BOTH)
+	GPIO.add_event_callback("P9_11",derecha)
+	GPIO.add_event_callback("P9_13",izquierda)
+
 
         GPIO.setup(self.ledPin, GPIO.OUT)
 
@@ -145,7 +166,7 @@ class QuickBot():
 
         # Initialize ADC
         ADC.setup()
-        self.encoderRead = encoderRead(self.encoderPin)
+        #self.encoderRead = encoderRead(self.encoderPin)
 
         # Set IP addresses
         self.baseIP = baseIP
@@ -173,6 +194,7 @@ class QuickBot():
             self.encRecSize = 2**13
             self.encRecInd = [0, 0]
             self.encTimeRec = np.zeros((2, self.encRecSize))
+
             self.encValRec = np.zeros((2, self.encRecSize))
             self.encPWMRec = np.zeros((2, self.encRecSize))
             self.encNNewRec = np.zeros((2, self.encRecSize))
@@ -218,10 +240,12 @@ class QuickBot():
             GPIO.output(self.dir2Pin[RIGHT], GPIO.LOW)
             PWM.set_duty_cycle(self.pwmPin[RIGHT], 0)
 
+
+
     # Methods
     def run(self):
         global RUN_FLAG
-        self.encoderRead.start()
+        #self.encoderRead.start()
         try:
             while RUN_FLAG is True:
                 self.update()
@@ -256,7 +280,7 @@ class QuickBot():
 
     def update(self):
         self.readIRValues()
-        self.readEncoderValues()
+        #self.readEncoderValues()
         self.parseCmdBuffer()
 
     def parseCmdBuffer(self):
@@ -593,7 +617,7 @@ class encoderRead(threading.Thread):
 
     # === Class Methods ===
     # Constructor
-    def __init__(self,encPin=('P9_39', 'P9_37')):
+    def __init__(self,encPin=('P9_11', 'P9_13')):
 
         # Initialize thread
         threading.Thread.__init__(self)
@@ -607,10 +631,10 @@ class encoderRead(threading.Thread):
 
         self.t0 = time.time()
         while RUN_FLAG:
-            global ENC_IND
-            global ENC_TIME
-            global ENC_VAL
-
+            #global ENC_IND
+            #global ENC_TIME
+            #global ENC_VAL
+    
             for side in range(0, 2):
                 ENC_TIME[side][ENC_IND[side]] = time.time() - self.t0
                 ADC_LOCK.acquire()
@@ -618,7 +642,7 @@ class encoderRead(threading.Thread):
                 time.sleep(ADCTIME)
                 ADC_LOCK.release()
                 ENC_IND[side] = (ENC_IND[side] + 1) % ENC_BUF_SIZE
-
+    
 
 def recursiveMeanVar(x, l, mu, sigma2):
     """
