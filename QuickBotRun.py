@@ -10,12 +10,41 @@
 
 import sys
 import time
+
+
+import Adafruit_BBIO.ADC as ADC
+import numpy as np
+
+if __name__ == '__main__':
+    """
+	import config
+
+    NUM_SAMPLES = 10 # 5-10 seconds of data
+
+    size = NUM_SAMPLES
+    buf = np.zeros((size, len(config.ENC_PINS)), dtype=np.int)
+
+  
+    ADC.setup()
+
+    for i in range(size):
+ 	values = tuple(ADC.read_raw(pin) for pin in config.ENC_PINS)
+        print('Raw encoder values: %4d  %4d' % values)
+        buf[i, 0] = values[0]
+        buf[i, 1] = values[1]
+        time.sleep(0.001)
+
+    print "Done"
+"""
+
+
+
 from QuickBot import *
 
 print "Running QuickBot"
 
-baseIP = '192.168.7.1'
-robotIP = '192.168.7.2'
+baseIP = '192.168.1.101'
+robotIP = '192.168.1.100'
 
 if len(sys.argv) > 3:
     print 'Invalid number of command line arguments.'
@@ -34,6 +63,8 @@ if len(sys.argv) >= 3:
 print 'Running QuickBot Program'
 print '    Base IP: ', baseIP
 print '    Robot IP: ', robotIP
+
+ADC.setup()
 
 QB = QuickBot(baseIP, robotIP)
 QB.run()
